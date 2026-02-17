@@ -4,9 +4,9 @@ Custom vLLM container image for NVIDIA DGX Spark (ARM64 Grace Blackwell GB10) wi
 
 ## Why This Exists
 
-The NGC vLLM 26.01-py3 container pins `transformers < 5.0`, but [GLM-4.7-Flash](https://huggingface.co/zai-org/GLM-4.7-Flash) uses the `glm4_moe_lite` architecture which requires `transformers >= 5.0`. This is tracked as [vLLM issue #34098](https://github.com/vllm-project/vllm/issues/34098).
+The stock `vllm/vllm-openai` image pins `transformers < 5.0`, but [GLM-4.7-Flash](https://huggingface.co/zai-org/GLM-4.7-Flash) uses the `glm4_moe_lite` architecture which requires `transformers >= 5.0`. This is tracked as [vLLM issue #34098](https://github.com/vllm-project/vllm/issues/34098).
 
-This Dockerfile extends the NGC base with **only** the transformers upgrade -- no other modifications. The result is a minimal, maintainable image that unblocks GLM-4.7-Flash on DGX Spark.
+This Dockerfile extends `vllm/vllm-openai:v0.15.1-aarch64-cu130` with **only** the transformers upgrade -- no other modifications. The base provides vLLM 0.15.1 with native `glm4_moe_lite` model support and CUDA 13.0 for Blackwell.
 
 ## Image
 
@@ -16,7 +16,7 @@ ghcr.io/3whiskeywhiskey/vllm-spark:latest
 
 Tags:
 - `latest` -- always points to the most recent build from `main`
-- `YYYYMMDD` -- date-based tag for pinning (e.g., `20260216`)
+- `YYYYMMDD` -- date-based tag for pinning (e.g., `20260217`)
 - Short SHA -- git commit hash for traceability
 
 ## How CI Works
@@ -26,7 +26,7 @@ Push to `main` (Dockerfile or workflow changes) triggers a GitHub Actions build:
 1. Sets up QEMU for ARM64 emulation on the x86 runner
 2. Builds the Dockerfile targeting `linux/arm64` only
 3. Pushes to `ghcr.io/3whiskeywhiskey/vllm-spark` with `latest`, date, and SHA tags
-4. Uses GitHub Actions cache to avoid re-pulling the ~6GB NGC base layer on every build
+4. Uses GitHub Actions cache to avoid re-pulling the base layer on every build
 
 Manual rebuilds are available via `workflow_dispatch` (Actions tab > Run workflow).
 
@@ -63,11 +63,11 @@ If this custom build approach fails:
 
 1. **Community pre-built image:** [`avarok/vllm-dgx-spark:v11`](https://huggingface.co/avarok/vllm-dgx-spark) -- includes SM 12.x patches and CUDA graph optimizations. Less transparent build process but actively maintained.
 
-2. **NGC container with a different model:** Use `nvcr.io/nvidia/vllm:26.01-py3` directly with a model that works without transformers 5.0 (e.g., Qwen2.5, Llama 3.3). This avoids the custom image entirely but means not running GLM-4.7-Flash.
+2. **Stock vllm-openai with a different model:** Use `vllm/vllm-openai:v0.15.1-aarch64-cu130` directly with a model that works without transformers 5.0 (e.g., Qwen2.5, Llama 3.3). This avoids the custom image entirely but means not running GLM-4.7-Flash.
 
 ## When to Remove This Repo
 
-Once NVIDIA ships an NGC vLLM container that includes `transformers >= 5.0` (likely in a future 26.xx release), this custom image is no longer needed. At that point:
+Once `vllm/vllm-openai` ships with `transformers >= 5.0` bundled, this custom image is no longer needed. At that point:
 
-1. Update Phase 21 K8s manifests to reference the NGC image directly
+1. Update Phase 21 K8s manifests to reference the stock image directly
 2. Archive this repository
