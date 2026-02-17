@@ -23,4 +23,4 @@ FROM vllm/vllm-openai:v0.15.1-aarch64-cu130
 #   which would downgrade or conflict with pinned packages (tokenizers,
 #   safetensors, huggingface-hub, etc. are already compatible in the base).
 RUN pip install --force-reinstall --no-deps \
-    git+https://github.com/huggingface/transformers.git@main
+    https://github.com/huggingface/transformers/archive/main.tar.gz
