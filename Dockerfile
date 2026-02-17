@@ -18,9 +18,11 @@
 FROM vllm/vllm-openai:v0.15.1-aarch64-cu130
 
 # Upgrade transformers to support glm4_moe_lite architecture (GLM-4.7-Flash).
-# --force-reinstall: overwrite the pinned version
-# --no-deps: CRITICAL -- prevents pip from resolving the full dependency tree,
-#   which would downgrade or conflict with pinned packages (tokenizers,
-#   safetensors, huggingface-hub, etc. are already compatible in the base).
+# --force-reinstall: overwrite the pinned versions
+# --no-deps: prevents pip from resolving the full dependency tree, which would
+#   downgrade or conflict with other pinned packages in the base image.
+# huggingface_hub must be upgraded alongside transformers -- transformers main
+# imports is_offline_mode which only exists in newer huggingface_hub.
 RUN pip install --force-reinstall --no-deps \
-    https://github.com/huggingface/transformers/archive/main.tar.gz
+    https://github.com/huggingface/transformers/archive/main.tar.gz \
+    huggingface_hub
